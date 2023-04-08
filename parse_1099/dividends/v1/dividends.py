@@ -46,7 +46,7 @@ class Dividends(DividendsInterface):
 
     def disqualify(self, shares_disqualified, share_dividend_amount) -> "DividendsInterface":
         '''Produces a new Dividend of type 'nonqualified dividend' and adjusts this dividend accordingly'''
-        disqualification_amount = shares_disqualified * share_dividend_amount
+        disqualification_amount = round(shares_disqualified * share_dividend_amount, 2)
         dividend_data = [self.get("security"), self.get("cusip"), \
                 self.get("transaction_date"), str(disqualification_amount), "Nonqualified dividend"]
         if self.include_notes:
@@ -64,7 +64,7 @@ class Dividends(DividendsInterface):
         return disqualified_dividend
 
     def copy(self) -> "DividendsInterface":
-        return Dividends(self.data, self.include_notes)
+        return Dividends(self.data.copy(), self.include_notes)
 
     @staticmethod
     def parse(raw_data: "list[str]", include_notes: bool) -> "list[Dividends]":
@@ -184,6 +184,16 @@ class Dividends(DividendsInterface):
                 subtotal_amount = atof(raw_data[cursor-1])
                 subtotals[raw_data[cursor]] = subtotal_amount
             cursor += 1
+
+        total_title = "Total Dividends & distributions"
+        tax_exempt_title = "Total Tax-exempt dividends"
+        foreign_tax_withheld_title = "Total Foreign tax withheld"
+        if total_title not in subtotals:
+            subtotals[total_title] = 0
+        if tax_exempt_title not in subtotals:
+            subtotals[tax_exempt_title] = 0
+        if foreign_tax_withheld_title not in subtotals:
+            subtotals[foreign_tax_withheld_title] = 0
         
         return DividendsTotal(subtotals["Total Dividends & distributions"], \
             tax_exempt=subtotals["Total Tax-exempt dividends"], \
